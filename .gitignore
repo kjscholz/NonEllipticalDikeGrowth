@@ -1,0 +1,26 @@
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Matlab asv #
+######################
+*.asv
+
+# Large Stress Models #
+######################
+*.csv
+
+# Andrew Analog Outputs #
+#########################
+*.csv
+*.xlxs
+
+# MatlabFiles that Store Outputs #
+#################################
+*.mat
