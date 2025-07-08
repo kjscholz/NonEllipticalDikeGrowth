@@ -10,8 +10,7 @@ keep_stress_model = 0;
 if keep_stress_model==0
     tic
     % load & rescale stress model
-    stress_fpath = 'StressModels/CrustalStressGridded_SummerCoon2600gg_lithostatic_a.mat';
-    load(stress_fpath)
+    load('StressModels/CrustalStressGridded_SummerCoon2600gg_lithostatic_c.mat')
     toc
     param.x0=0;
     HC = 2600; % Elevation of edifice
@@ -24,25 +23,11 @@ if keep_stress_model==0
     % SXX=SXX.*1; % Scale stresses??
     F = SxxInterp;
 end
-% Set up parameter grid
-depth_list = 9e3; % m
-density_list = 2200:400:2600;
-overpressure_list = 1e6:6e6:7e6;
 
-[depth_grid, density_grid, overpressure_grid] = meshgrid(depth_list,density_list,overpressure_list);
-grid_elements = numel(depth_grid);
-batchnum=6;
-% Preallocate Outputs Based on Grid Size
-output_time = cell(1,grid_elements);
-output_yo = cell(1,grid_elements);
-output_zo = cell(1,grid_elements);
-output_param = cell(1,grid_elements);
-
-vent_height = zeros(size(depth_grid));
 % Assign injection point
 % **Injection point is where fluid comes into the dike. Excess pressure here
 % is assumed to remain constant in this version of the model**
-param.yi = 0e3; % y-coordinate of injection point (m)
+param.yi = 1e3; % y-coordinate of injection point (m)
 
 % create structure for constants
 %param.youngs       = 1700;      % Young's modulus (Pa)
@@ -65,35 +50,26 @@ a_0 = 50; % initial dike radius (m)
 %q_in_mL_min = 1.05; % mL/min
 %param.q_in  = q_in_mL_min*1e-6/60; % convert to m^3/s
 tic
-for ii=1:grid_elements
 % variables
-Pe  = overpressure_grid(ii); % constant excess pressure (Pa)
-param.zi = depth_grid(ii); % z-coordinate of injection point (m)
-param.rho_m        = density_grid(ii);     % density fluid (kg/m3)
+Pe  = 2e6; % constant excess pressure (Pa)
+param.zi = 6e3; % z-coordinate of injection point (m)
+param.rho_m        = 2400;     % density fluid (kg/m3)
 param.gamma_magma  = param.rho_m*param.g; % magmastatic gradient (Pa/m)
 
 % time steps
 begin_time     = 0;       % initialize time
-end_time       = 1e3/(Pe*((Pe/param.mu)^2*a_0)/(param.eta));      % maximum simulation time in seconds
+end_time       = 3e3/(Pe*((Pe/param.mu)^2*a_0)/(param.eta));      % maximum simulation time in seconds
 time_vector    = linspace(begin_time,end_time,4000); % time steps at which to compute (s)
-output_time{ii} = time_vector;
-[output_param{ii}, output_yo{ii}, output_zo{ii}] = mainDikePropagate(F, a_0,Pe,time_vector,n,param); % run mainChamber.m
-vent_height(ii)=min(output_zo{ii}(output_param{ii}.time_last,:));
-end
+
+
+[param_out, store_yo, store_zo] = mainDikePropagate(F, a_0,Pe,time_vector,n,param); % run mainChamber.m
 compute_time = toc
-%%
-name = sprintf('batch_out/runs_%03d.mat',batchnum);
-save(name,"density_grid","overpressure_grid","depth_grid","vent_height",...
-            "output_time", "output_yo", "output_zo",...
-            "output_param","compute_time", "HC","RC","stress_fpath",'-v7.3');
+param_out.stop_reason
+param_out.time_last
 %% plots
-for jj=1:floor(grid_elements/3):grid_elements
-    time_vector=output_time{jj};
-    store_yo = output_yo{jj};
-    store_zo = output_zo{jj};
 figure
 hold on
-for i = 1:300:length(time_vector)
+for i = 1:floor(param_out.time_last/20):param_out.time_last
 
 plot(store_yo(i,:),store_zo(i,:),'o')
 
@@ -112,4 +88,4 @@ yline(0,'LineWidth',2)
 set(gca, 'Ydir','reverse')
 
 axis equal ;
-end
+

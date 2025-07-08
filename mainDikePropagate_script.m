@@ -1,4 +1,4 @@
-function [param_out, store_yo, store_zo] = mainDikePropagate(F, a_0, Pe, time_vector, n, param)
+
 % Prescribe observation points along dike tip-line
 % **points are initially linearly spaced in their angle wrt injection point
 b_0 = a_0;
@@ -23,17 +23,13 @@ Vd_0       = (2*pi/3)*a_0*b_0*del_0; %initial dike volume (m^3)
 % initial observations points (m)
 yo = param.yo_0;
 zo = param.zo_0;
-x0_o = ones(size(zo))*param.x0;
+x0_o = zeros(size(zo));
 
 % initialize the array to store observations points
 store_yo = NaN(numel(time_vector),numel(yo));
 store_zo =  NaN(numel(time_vector),numel(yo));
-i=1;
-stop_time= length(time_vector)-1;
-stop = false;
-stop_reason = 'none';
-time_last = 0;
-while ~stop
+
+for i = 1:length(time_vector)-1
 
     dt = time_vector(i+1)-time_vector(i); % time step in seconds
     lo = sqrt((yo-param.yi).^2+(zo-param.zi).^2); % distances between injection point and observations points (m)
@@ -44,11 +40,11 @@ while ~stop
     p_g_ex = param.f_p*Pe./lo; % (Pa/m)
 
     % Second term related to gravity on Fluid
-    p_g_grav    = sin(param.thetas).*(-param.gamma_magma); % gravitational gradient
+    p_g_grav    = sin(param.thetas).*(param.gamma_litho-param.gamma_magma); % gravitational gradient
 
     % Third term from load of volcanic edifice + lithostatic
     Sv_at_zo_yo = F(x0_o,yo,zo); % value of volcano stress at observation points
-    Sv_at_zi_yi = F(param.x0,param.yi,param.zi); % value of volcano stress at injection point
+    Sv_at_zi_yi = F(x0,param.yi,param.zi); % value of volcano stress at injection point
     dSv = Sv_at_zo_yo-Sv_at_zi_yi;
     p_g_volcano = -dSv./lo; 
 
@@ -101,25 +97,8 @@ while ~stop
 
     store_yo(i,:) = yo;
     store_zo(i,:) = zo;
-    
-    ztopo = -topo_profile(yo)+1;
-    if any(zo<ztopo)
-        stop=true;
-        stop_reason = "topo";
-        time_last = i;
-    end
-    if i>=stop_time
-        stop=true;
-        stop_reason = "time";
-        time_last = i;
-    end
-    
-    i=i+1;
+
 end
-param.Pe = Pe;
-param.a_0 = a_0;
-param.stop_reason = stop_reason;
-param.time_last = time_last;
-param_out = param;
+
 
 
