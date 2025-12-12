@@ -25,14 +25,17 @@ if keep_stress_model==0
     % SXX=SXX.*1; % Scale stresses??
     F = SxxInterp;
 end
+depths_forbatches=0:1e3:9e3;
+for jj=1:length(depths_forbatches)
+batchnum=15+jj;
 % Set up parameter grid
-depth_list = 8e3; % m
-density_list = 2100:100:2600;
+depth_list = depths_forbatches(jj); % m
+density_list = 2100:50:2650;
 overpressure_list = 1e6:1e6:20e6;
 
 [depth_grid, density_grid, overpressure_grid] = meshgrid(depth_list,density_list,overpressure_list);
 grid_elements = numel(depth_grid);
-batchnum=15;
+
 % Preallocate Outputs Based on Grid Size
 output_time = cell(1,grid_elements);
 output_yo = cell(1,grid_elements);
@@ -106,30 +109,31 @@ name = sprintf('batch_out/runs_%03d.mat',batchnum);
 save(name,"density_grid","overpressure_grid","depth_grid","vent_height","vent_radius",...
     "output_time", "output_yo", "output_zo",...
     "output_param","compute_time", "HC","RC","stress_fpath","sparse_save",'-v7.3');
-%% plots
-for jj=1:floor(grid_elements/3):grid_elements
-    time_vector=output_time{jj};
-    store_yo = output_yo{jj};
-    store_zo = output_zo{jj};
-    figure
-    hold on
-    for i = 1:300:length(time_vector)
-
-        plot(store_yo(i,:),store_zo(i,:),'o')
-
-    end
-
-
-    surface_line_x  = -RC:RC/100:RC;
-    surface_line_y  = -topo_profile(surface_line_x);
-
-    hold on
-    plot(surface_line_x,surface_line_y,'k','LineWidth',2)
-
-    xline(0,'k--')
-    yline(0,'LineWidth',2)
-
-    set(gca, 'Ydir','reverse')
-
-    axis equal ;
 end
+% %% plots
+% for jj=1:floor(grid_elements/3):grid_elements
+%     time_vector=output_time{jj};
+%     store_yo = output_yo{jj};
+%     store_zo = output_zo{jj};
+%     figure
+%     hold on
+%     for i = 1:300:length(time_vector)
+% 
+%         plot(store_yo(i,:),store_zo(i,:),'o')
+% 
+%     end
+% 
+% 
+%     surface_line_x  = -RC:RC/100:RC;
+%     surface_line_y  = -topo_profile(surface_line_x);
+% 
+%     hold on
+%     plot(surface_line_x,surface_line_y,'k','LineWidth',2)
+% 
+%     xline(0,'k--')
+%     yline(0,'LineWidth',2)
+% 
+%     set(gca, 'Ydir','reverse')
+% 
+%     axis equal ;
+% end
