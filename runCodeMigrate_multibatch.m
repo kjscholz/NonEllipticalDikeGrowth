@@ -27,10 +27,10 @@ if keep_stress_model==0
 end
 depths_forbatches=0:1e3:9e3;
 for jj=1:length(depths_forbatches)
-batchnum=15+jj;
+batchnum=26+jj;
 % Set up parameter grid
 depth_list = depths_forbatches(jj); % m
-density_list = 2100:50:2650;
+density_list = 2100:100:2600;
 overpressure_list = 1e6:1e6:20e6;
 
 [depth_grid, density_grid, overpressure_grid] = meshgrid(depth_list,density_list,overpressure_list);
@@ -80,7 +80,7 @@ for ii=1:grid_elements
 
     % time steps
     begin_time     = 0;       % initialize time
-    end_time       = 4e3/(Pe*((Pe/param.mu)^2*a_0)/(param.eta));      % maximum simulation time in seconds
+    end_time       = (6e4*3*param.eta^2)/((Pe/a_0)+(param.gamma_litho-param.gamma_magma))^2;      % maximum simulation time in seconds
     time_vector    = linspace(begin_time,end_time,8000); % time steps at which to compute (s)
     output_time{ii} = time_vector;
     [output_param{ii}, output_yo{ii}, output_zo{ii}] = mainDikePropagate(F, a_0,Pe,time_vector,n,param); % run mainChamber.m

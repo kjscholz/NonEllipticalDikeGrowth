@@ -6,7 +6,7 @@
 
 clearvars -except F param HC RC x0
 keep_stress_model = 0;
-sparse_save = 1;
+sparse_save = 0;
 % close all
 if keep_stress_model==0
     tic
@@ -26,13 +26,13 @@ if keep_stress_model==0
     F = SxxInterp;
 end
 % Set up parameter grid
-depth_list = 8e3; % m
-density_list = 2100:100:2600;
-overpressure_list = 1e6:1e6:20e6;
+depth_list = 0e3; % m
+density_list = 2200:200:2600;
+overpressure_list = 1e6:3e6:10e6;
 
 [depth_grid, density_grid, overpressure_grid] = meshgrid(depth_list,density_list,overpressure_list);
 grid_elements = numel(depth_grid);
-batchnum=15;
+batchnum=26;
 % Preallocate Outputs Based on Grid Size
 output_time = cell(1,grid_elements);
 output_yo = cell(1,grid_elements);
@@ -77,10 +77,11 @@ for ii=1:grid_elements
 
     % time steps
     begin_time     = 0;       % initialize time
-    end_time       = 4e3/(Pe*((Pe/param.mu)^2*a_0)/(param.eta));      % maximum simulation time in seconds
+    end_time       = (6e4*3*param.eta^2)/((Pe/a_0)+(param.gamma_litho-param.gamma_magma))^2;      % maximum simulation time in seconds
     time_vector    = linspace(begin_time,end_time,8000); % time steps at which to compute (s)
     output_time{ii} = time_vector;
     [output_param{ii}, output_yo{ii}, output_zo{ii}] = mainDikePropagate(F, a_0,Pe,time_vector,n,param); % run mainChamber.m
+    output_param{ii}.stop_reason
     if strcmp(output_param{ii}.stop_reason,"topo")
         z_topo_final = -topo_profile(output_yo{ii}(output_param{ii}.time_last,:))+1;
         inds = output_zo{ii}(output_param{ii}.time_last,:)<=z_topo_final;
@@ -107,18 +108,19 @@ save(name,"density_grid","overpressure_grid","depth_grid","vent_height","vent_ra
     "output_time", "output_yo", "output_zo",...
     "output_param","compute_time", "HC","RC","stress_fpath","sparse_save",'-v7.3');
 %% plots
-for jj=1:floor(grid_elements/3):grid_elements
+for jj=1:1:grid_elements %floor(grid_elements/3)
     time_vector=output_time{jj};
     store_yo = output_yo{jj};
     store_zo = output_zo{jj};
     figure
     hold on
-    for i = 1:300:length(time_vector)
+    for i = 1:floor(output_param{ii}.time_last/20):output_param{ii}.time_last %floor(length(time_vector)/20)
 
         plot(store_yo(i,:),store_zo(i,:),'o')
+   
 
     end
-
+    plot(store_yo(output_param{ii}.time_last,:),store_zo(output_param{ii}.time_last,:),'o')
 
     surface_line_x  = -RC:RC/100:RC;
     surface_line_y  = -topo_profile(surface_line_x);
