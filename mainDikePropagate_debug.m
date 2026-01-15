@@ -1,4 +1,4 @@
-function [param_out, store_yo, store_zo,store_dh_dt,store_del] = mainDikePropagate(F, a_0, Pe, time_vector, n, param)
+function [param_out, store_yo, store_zo,store_dh_dt,store_del,store_p_g_total,store_p_g_ex,store_p_g_grav,store_p_g_volcano,store_lo] = mainDikePropagate(F, a_0, Pe, time_vector, n, param)
 % Prescribe observation points along dike tip-line
 % **points are initially linearly spaced in their angle wrt injection point
 b_0 = a_0;
@@ -30,6 +30,11 @@ store_yo = NaN(numel(time_vector),numel(yo));
 store_zo =  NaN(numel(time_vector),numel(yo));
 store_dh_dt=  NaN(numel(time_vector),numel(yo));
 store_del = NaN(size(time_vector));
+store_p_g_total = NaN(numel(time_vector),numel(yo));
+store_p_g_ex = NaN(numel(time_vector),numel(yo));
+store_p_g_grav = NaN(numel(time_vector),numel(yo));
+store_p_g_volcano = NaN(numel(time_vector),numel(yo));
+store_lo = NaN(numel(time_vector),numel(yo));
 i=1;
 stop_time= length(time_vector)-1;
 stop = false;
@@ -43,7 +48,12 @@ while ~stop
     % % % COMPUTE FLUID PRESSURE GRADIENTS AT EACH POINT % % %
 
     % First term related to runout of excess pressure
-    p_g_ex = param.f_p*Pe./lo; % (Pa/m)
+    if abs(lo) < a_0
+        lo_calc=lo;
+    else 
+        lo_calc= lo;
+    end
+    p_g_ex = param.f_p*Pe./lo_calc; % (Pa/m)
 
     % Second term related to gravity on Fluid
     p_g_grav    = sin(param.thetas).*(-param.gamma_magma); % gravitational gradient
@@ -52,7 +62,7 @@ while ~stop
     Sv_at_zo_yo = F(x0_o,yo,zo); % value of volcano stress at observation points
     Sv_at_zi_yi = F(param.x0,param.yi,param.zi); % value of volcano stress at injection point
     dSv = Sv_at_zo_yo-Sv_at_zi_yi;
-    p_g_volcano = -dSv./lo; 
+    p_g_volcano = -dSv./lo_calc; 
 
     % new points at which to evaluate volcano stress  
     %yn = yo+param.dl.*cos(param.thetas); % y-coordinates of points for evaluating stress gradient (m)
@@ -75,6 +85,7 @@ while ~stop
     %minor = min(lo); % semi-minor axis of dike (m)
     %major = max(lo); % semi-major axis of dike (m)
     b = zo(param.ind_lower) - zo(param.ind_upper); % height of dike near injection point (m)
+    
     a = yo(param.ind_right) - yo(param.ind_left);  % horizontal breadth of dike near injection point (m)
 
     % Elliptic integrals
@@ -85,8 +96,11 @@ while ~stop
     end
 
     k     = real(sqrt(1-(minor^2)/(major^2))); % modulus
+    k^2
+    
     [F2,E2] = ellipke(k^2);
     A2 = ((E2-F2)/E2)*(1/(((major^2)/(minor^2))-1));
+    
     % max dike opening (ish)
     del = (2*(b/2)*(1-param.pr)*Pe)/(param.mu*E2); % m
 
@@ -94,6 +108,8 @@ while ~stop
     dh_dt = param.f_v*(1/(3*param.eta))*p_g_total*((param.f_d*del)^2);
     db_dt = (dh_dt(param.ind_upper)+dh_dt(param.ind_lower))/2;
     da_dt = (dh_dt(param.ind_left)+dh_dt(param.ind_right))/2;
+
+    store_lo(i,:) = lo;
 
     % % % ADVANCE POINTS BASED ON TIME STEP % % %
     dh = dh_dt*dt; % increment of growth at each point (m)
@@ -105,6 +121,11 @@ while ~stop
     store_zo(i,:) = zo;
     store_dh_dt(i,:) = dh_dt;
     store_del(i)=del;
+    store_p_g_total(i,:)=p_g_total;
+    store_p_g_ex(i,:) = p_g_ex;
+    store_p_g_grav(i,:) = p_g_grav;
+    store_p_g_volcano(i,:) = p_g_volcano;
+    %store_lo(i,:) = lo;
     ztopo = -topo_profile(yo)+1;
     if any(zo<ztopo)
         stop=true;
