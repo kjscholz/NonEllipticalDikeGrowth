@@ -26,7 +26,7 @@ if keep_stress_model==0
     F = SxxInterp;
 end
 % Set up parameter grid
-depth_list = 0e3; % m
+depth_list = -1e3; % m
 density_list = 2200:200:2600;
 overpressure_list = 1e6:3e6:10e6;
 
@@ -114,7 +114,7 @@ for jj=1:1:grid_elements %floor(grid_elements/3)
     store_zo = output_zo{jj};
     figure
     hold on
-    for i = 1:floor(output_param{ii}.time_last/20):output_param{ii}.time_last %floor(length(time_vector)/20)
+    for i = 1:floor(output_param{ii}.time_last/100):output_param{ii}.time_last %floor(length(time_vector)/20)
 
         plot(store_yo(i,:),store_zo(i,:),'o')
    
@@ -134,4 +134,6 @@ for jj=1:1:grid_elements %floor(grid_elements/3)
     set(gca, 'Ydir','reverse')
 
     axis equal ;
+    xlim([-10e3, 10e3])
+    ylim([-3e3,10e3])
 end

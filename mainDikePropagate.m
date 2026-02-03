@@ -103,10 +103,11 @@ while ~stop
     store_zo(i,:) = zo;
     
     ztopo = -topo_profile(yo)+1;
-    if any(abs(yo)>10e3)
-        stop=true;
-        stop_reason = "lateral extent";
-        time_last = i;
+    % if any(abs(yo)>10e3)
+    %     stop=true;
+    %     stop_reason = "lateral extent";
+    %     time_last = i;
+    % end
     % TEMPORARILY REMOVING VERTICAL STOP CONDITION
     % if any(zo<ztopo)
     %     stop=true;
